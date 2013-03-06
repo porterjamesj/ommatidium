@@ -32,7 +32,11 @@ y_deg = 1.0
 
 ney = 2.0
 
-nmol = 1
+ny25 = 2.0
+ne25 = 2.0
+deg25 = 1.0
+
+nmol = 2
 xdim = 5
 ydim = 5
 
@@ -46,12 +50,12 @@ def f(y, t, nmol, triang):
     xprime = np.empty(c.shape)
 
     yan = c[0,:,:]
-    #R2_5 = c[1,:,:]
-
+    R2_5 = c[1,:,:]
+    egfr = sens + R2_5
     # rates of change for yan
-    xprime[0,:,:] = (1-hill(sig(sens,triang),1.0,ney)) * hill(t/N_y,1.0,nny) - y_deg * yan
+    xprime[0,:,:] = (1-hill(sig(egfr,triang),1.0,ney)) * hill(t/N_y,1.0,nny) - y_deg * yan
     # rates of change for R2_5
-    #xprime[1,:,:] = (1-hill(yan,1.0,ny25)) * rough * hill(sig(sens,triang),1.0,ns25) - deg25 * R2_5 
+    xprime[1,:,:] = (1-hill(yan,1.0,ny25)) * rough * hill(sig(egfr,triang),1.0,ne25) - deg25 * R2_5 
     
     
     return xprime.flatten()
@@ -82,7 +86,7 @@ plt.savefig("fig")
 sens = np.copy(initial[0])
 sens[2,2] = 1
 rough = np.copy(initial[0])
-rough[3,2],rough[1,2],rough[2,2] = 1,1,1
+rough[3,2],rough[1,2] = 1,1
 lz = np.ones((xdim,ydim))
 lz[3,2],lz[1,2],lz[2,2],lz[1,3],lz[2,3] = 0,0,0,0,0
 
@@ -99,7 +103,7 @@ resols = [np.reshape(i, [nmol,xdim,ydim]) for i in sol]
 
 #make a pretty plot of results, control the time point and molecule using 'c'
 plt.clf()
-plt.scatter(distlattice[1].flatten(), distlattice[0].flatten(), c = resols[60][0], vmin = 0, vmax = 1, s = 500)
+plt.scatter(distlattice[1].flatten(), distlattice[0].flatten(), c = resols[5][1], vmin = 0, vmax = 1, s = 1000)
 plt.axes().set_aspect('equal')
 plt.colorbar()
 plt.savefig("fig")
