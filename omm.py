@@ -83,9 +83,9 @@ def f(y, t, nmol, params):
     # rates of change for egfr
     xprime[1,:] = e_k * (e_prod*(sens+R_25+R_34) - egfr) + D_e*oneDdiff(egfr)
     # rate of change for R_25
-    xprime[2,:] = r25_k * (rough*hill(egfr,N_25,n25)*(1-hill(yan,Y,ny)) - 1.0*R_25)
+    xprime[2,:] = r25_k * (rough*hill(egfr,N_25,n25)*(1-hill(yan,0.5*Y,ny)) - 1.0*R_25)
     # rate of change for R_34
-    xprime[3,:] = r34_k * (hill(egfr,N_34,n34)*(1-hill(yan,Y,ny))*(1-hill(rough+sens,0.1,2.0)) - 1.0*R_34)
+    xprime[3,:] = r34_k * (hill(egfr,N_34,n34)*(1-hill(yan,0.5*Y,ny))*(1-hill(rough+sens,0.1,2.0)) - 1.0*R_34)
     return xprime.flatten()
 
 #set up precluster
@@ -107,7 +107,7 @@ print "done"
 
 # plot simulation and data
 plt.clf()
-plt.plot(timerange,resols[:,0,2])
+plt.plot(timerange,resols[:,0,0])
 #plt.plot(progs[0],progs[1], marker = 'o')
 plt.plot(r8s[0],r8s[1], marker = 'o')
 plt.plot(r25s[0],r25s[1], marker = 'o')
