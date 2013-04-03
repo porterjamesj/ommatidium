@@ -44,23 +44,29 @@ e_prod = 1.3
 D_e = 0.01
 
 r25_k = 1.0
+N_25 = 0.2
+n25 = 4.0
 
-params = [y_k,y_basal,e_k,E,ne,D_e,r25_k,Y,ny]
+r34_k = 1.0
+N_34 = 0.2
+n34 = 4.0
 
-nmol = 3
+params = [y_k,y_basal,e_k,E,ne,D_e,r34_k,Y,ny]
+
+nmol = 4
 
 # The function that determines the rates of change, which we solve to integrate
 def f(y, t, nmol, params):
     # get the parameters back out to a usable form
-    y_k = params[0]
-    y_basal = params[1]
-    e_k = params[2]
-    E = params[3]
-    ne = params[4]
-    D_e = params[5]
-    r25_k = params[6]
-    Y = params[7]
-    ny = params[8] 
+    #y_k = params[0]
+    #y_basal = params[1]
+    #e_k = params[2]
+    #E = params[3]
+    #ne = params[4]
+    #D_e = params[5]
+    #r34_k = params[6]
+    #Y = params[7]
+    #ny = params[8] 
     
     #reshape flat array into shape (nmol,5)
     c = np.reshape(y,[nmol,5])
@@ -70,16 +76,16 @@ def f(y, t, nmol, params):
     yan = c[0,:]
     egfr = c[1,:]
     R_25 = c[2,:]
-    #R_34 = c[3,:]
+    R_34 = c[3,:]
 
     # rates of change for yan
     xprime[0,:] = y_k * (y_basal + (1-hill(egfr,E,ne))*(1-hill(yan,Y,ny))*(progfxn(t)-y_basal) - yan)
     # rates of change for egfr
-    xprime[1,:] = e_k * (e_prod*(sens+R_25 - egfr)) + D_e*oneDdiff(egfr)
+    xprime[1,:] = e_k * (e_prod*(sens+R_25+R_34) - egfr) + D_e*oneDdiff(egfr)
     # rate of change for R_25
-    xprime[2,:] = r25_k * (rough*hill(egfr,0.2,4.0)*(1-hill(yan,1.0,2.0)) - 1.0*R_25)
+    xprime[2,:] = r25_k * (rough*hill(egfr,N_25,n25)*(1-hill(yan,Y,ny)) - 1.0*R_25)
     # rate of change for R_34
-    #xprime[6,:] = 0.0 #r34_prod + hill(p1+pp2/E_r,1.0,npr)*(1-hill((sens+rough)/RS_r,1.0,nrr))*(1-hill(yan/Y_r,1.0,nyr)) - r34_deg * R_34
+    xprime[3,:] = r34_k * (hill(egfr,N_34,n34)*(1-hill(yan,Y,ny))*(1-hill(rough+sens,0.1,2.0)) - 1.0*R_34)
     return xprime.flatten()
 
 #set up precluster
@@ -101,11 +107,11 @@ print "done"
 
 # plot simulation and data
 plt.clf()
-plt.plot(timerange,resols[:,0,1])
+plt.plot(timerange,resols[:,0,2])
 #plt.plot(progs[0],progs[1], marker = 'o')
 plt.plot(r8s[0],r8s[1], marker = 'o')
 plt.plot(r25s[0],r25s[1], marker = 'o')
-#plt.plot(r34s[0],r34s[1], marker = 'o')
+plt.plot(r34s[0],r34s[1], marker = 'o')
 plt.axis([0,300,0,1.5])
 plt.savefig("fig.png")
 
