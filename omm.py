@@ -44,29 +44,35 @@ e_prod = 1.3
 D_e = 0.01
 
 r25_k = 1.0
-N_25 = 0.2
+N_25 = 0.1
 n25 = 4.0
 
 r34_k = 1.0
-N_34 = 0.2
+N_34 = 0.1
 n34 = 4.0
 
-params = [y_k,y_basal,e_k,E,ne,D_e,r34_k,Y,ny]
+params = [y_k,y_basal,Y,ny,e_k,E,ne,e_prod,D_e,r25_k,N_25,n25,r34_k,N_34,n34]
 
 nmol = 4
 
 # The function that determines the rates of change, which we solve to integrate
 def f(y, t, nmol, params):
     # get the parameters back out to a usable form
-    #y_k = params[0]
-    #y_basal = params[1]
-    #e_k = params[2]
-    #E = params[3]
-    #ne = params[4]
-    #D_e = params[5]
-    #r34_k = params[6]
-    #Y = params[7]
-    #ny = params[8] 
+    y_k = params[0]
+    y_basal = params[1]
+    Y = params[2]
+    ny = params[3]
+    e_k = params[4]
+    E = params[5]
+    ne = params[6]
+    e_prod = params[7]
+    D_e = params[8]
+    r25_k = params[9]
+    N_25 = params[10]
+    n25 = params[11]
+    r34_k = params[12]
+    N_34 = params[13]
+    n34 = params[14] 
     
     #reshape flat array into shape (nmol,5)
     c = np.reshape(y,[nmol,5])
@@ -79,13 +85,14 @@ def f(y, t, nmol, params):
     R_34 = c[3,:]
 
     # rates of change for yan
+    # add repression by r25 and r34 here
     xprime[0,:] = y_k * (y_basal + (1-hill(egfr,E,ne))*(1-hill(yan,Y,ny))*(progfxn(t)-y_basal) - yan)
     # rates of change for egfr
     xprime[1,:] = e_k * (e_prod*(sens+R_25+R_34) - egfr) + D_e*oneDdiff(egfr)
     # rate of change for R_25
-    xprime[2,:] = r25_k * (rough*hill(egfr,N_25,n25)*(1-hill(yan,0.5*Y,ny)) - 1.0*R_25)
+    xprime[2,:] = r25_k * (rough*hill(egfr,N_25,n25)*(1-hill(yan,Y,ny)) - 1.0*R_25)
     # rate of change for R_34
-    xprime[3,:] = r34_k * (hill(egfr,N_34,n34)*(1-hill(yan,0.5*Y,ny))*(1-hill(rough+sens,0.1,2.0)) - 1.0*R_34)
+    xprime[3,:] = r34_k * (hill(egfr,N_34,n34)*(1-hill(yan,Y,ny))*(1-hill(rough+sens,0.1,2.0)) - 1.0*R_34)
     return xprime.flatten()
 
 #set up precluster
@@ -108,7 +115,9 @@ print "done"
 # plot simulation and data
 plt.clf()
 plt.plot(timerange,resols[:,0,0])
-#plt.plot(progs[0],progs[1], marker = 'o')
+plt.plot(timerange,resols[:,0,1])
+plt.plot(timerange,resols[:,0,2])
+plt.plot(progs[0],progs[1], marker = 'o')
 plt.plot(r8s[0],r8s[1], marker = 'o')
 plt.plot(r25s[0],r25s[1], marker = 'o')
 plt.plot(r34s[0],r34s[1], marker = 'o')
@@ -116,35 +125,41 @@ plt.axis([0,300,0,1.5])
 plt.savefig("fig.png")
 
 
+# parameter tuning
 
+t_r8s = r8s.transpose()
+t_r25s = r25s.transpose()
+t_r34s = r34s.transpose()
 
-'''
-# emcee parameter tuning
+res = None
 
-# The function we are trying to minimize
-# Takes yan data into account as well as biology
-# (e.g. pnt should be high in differentiated cells, correct markers in place)
-def invrmse(params,nmol,progs):
+def err_fxn(params,nmol):
     lparams = [float(val) for val in params]
     args = tuple([nmol,lparams])
     sol = odeint(f,precluster.flatten(),timerange,args)
     resols = sol.reshape([len(timerange),nmol,5])
     error = 0
     # calculate error in yan data
-    for datapoint in progs:
+    for datapoint in t_r8s:
         delta = resols[datapoint[0],0,2] - datapoint[1]
+        error += delta**2
+    for datapoint in t_r25s:
+        delta = resols[datapoint[0],0,1] - datapoint[1]
+        error += delta**2
+    for datapoint in t_r34s:
+        delta = resols[datapoint[0],0,0] - datapoint[1]
         error += delta**2
     return error
 
-# set up sampler parameters
-ndim,nwalkers = 6, 100
-
-#inital vector of the system
-p0 = [np.random.normal(val,0.1*val) for val in params]
-
-sampler = emcee.EnsembleSampler(nwalkers, ndim, invrmse, args=[nmol,progs], threads = 2, live_dangerously = False)
+def callback(ps):
+    res = ps
 
 # trying scipy.optimize.minimize
 
-progprod = interplolate
-'''
+res = spopt(err_fxn,params,
+            args=[nmol],
+            method = "L-BFGS-B",
+            bounds = [(0,None) for i in xrange(0,15)],
+            tol = 0.075,
+            options = {"maxiter":3,"disp":True},
+            callback = callback)

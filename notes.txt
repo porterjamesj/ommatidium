@@ -1,0 +1,4 @@
+
+One unrealism about this is that EGFR signaling just grows and grows until it hits some steady state. What might be more realistic: EGFR feeds back to activate itself, but then is *shut off* but the activation of the cell type specific transcription programmes (r25 and r34) so that it doesn't go all wild and crazy in the end.
+
+In this model: is it more relistic to have EGFR and Yan be able to do everything by themselves? This might be the simplest model. Slighter more complex alternative is to have EGFR spread on its own but require cell specific readouts for Yan to be turend off (i.e. EGFR is not a direct repressor of Yan). I think the most biologically realistic thing is for both to be required for Yan downregulation (probably in real life this is necessary for robustness; would be good to show this). 
