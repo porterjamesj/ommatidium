@@ -81,4 +81,23 @@ def diff(conc_array, triang):
             val_array[pindex] += (1 / np.linalg.norm(triang.points[pindex] - triang.points[nindex])**2) * (conc_list[nindex] - conc_list[pindex])
     return np.reshape(val_array, np.shape(conc_array))
 
+#1D diffusions function
+
+def oneDdiff(concs):
+    '''takes a 1D array of concentrations and returns the diffusion rate for each'''
+    diff_rates = np.zeros(concs.shape)
+    for i in range(concs.size):
+        # try-except statements catch the boundaries of the array
+        try:
+            lside = (concs[i-1] - concs[i])
+        except IndexError:
+            lside = 0.0
+        try:
+            rside = (concs[i+1] - concs[i])
+        except IndexError:
+            rside = 0.0
+        diff_rates[i] = lside + rside
+    return diff_rates
+
+
 #//
